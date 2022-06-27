@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
+	"sync"
 
 	"github.com/go-kratos/kratos-layout/internal/conf"
 	"github.com/go-kratos/kratos/v2"
@@ -24,7 +26,25 @@ var (
 	flagconf string
 
 	id, _ = os.Hostname()
+
+	// global weight list for load balance
+	GlobalWeightList WeightList
 )
+
+type Weight struct {
+	instance string
+	weight   int
+}
+
+type WeightList struct {
+	mu   sync.Mutex
+	list map[string][]Weight // key: operation, value: weight list
+}
+
+func (w *WeightList) Sync(ctx context.Context) error {
+
+	return nil
+}
 
 func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
@@ -76,6 +96,12 @@ func main() {
 		panic(err)
 	}
 	defer cleanup()
+
+	go func() {
+		if err := GlobalWeightList.Sync(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
 
 	// start and wait for stop signal
 	if err := app.Run(); err != nil {
