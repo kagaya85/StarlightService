@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	v1 "../starlight/api/balancer/v1"
+	v1 "starlight/api/balancer/v1"
 
 	"github.com/go-kratos/kratos-layout/internal/conf"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
