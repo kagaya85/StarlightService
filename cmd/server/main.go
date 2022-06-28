@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"os"
-	"sync"
 
 	"github.com/go-kratos/kratos-layout/internal/conf"
+	"github.com/go-kratos/kratos-layout/internal/lb"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/config/file"
@@ -28,23 +28,8 @@ var (
 	id, _ = os.Hostname()
 
 	// global weight list for load balance
-	GlobalWeightList WeightList
+	GlobalWeightList lb.WeightList
 )
-
-type Weight struct {
-	instance string
-	weight   int
-}
-
-type WeightList struct {
-	mu   sync.Mutex
-	list map[string][]Weight // key: operation, value: weight list
-}
-
-func (w *WeightList) Sync(ctx context.Context) error {
-
-	return nil
-}
 
 func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
@@ -98,7 +83,7 @@ func main() {
 	defer cleanup()
 
 	go func() {
-		if err := GlobalWeightList.Sync(context.TODO()); err != nil {
+		if err := GlobalWeightList.Sync(context.TODO(), bc.Balancer); err != nil {
 			panic(err)
 		}
 	}()
