@@ -1,19 +1,27 @@
 package server
 
 import (
-	v1 "github.com/go-kratos/kratos-layout/api/helloworld/v1"
-	"github.com/go-kratos/kratos-layout/internal/conf"
-	"github.com/go-kratos/kratos-layout/internal/service"
+	v1 "starlight/api/services/upload/v1"
+	"starlight/services/upload/internal/conf"
+	"starlight/services/upload/internal/service"
+
+	prom "github.com/go-kratos/kratos/contrib/metrics/prometheus/v2"
+
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/metrics"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, greeter *service.GreeterService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, upload *service.UploadService, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
+			metrics.Server(
+				metrics.WithSeconds(prom.NewHistogram(_metricSeconds)),
+				metrics.WithRequests(prom.NewCounter(_metricRequests)),
+			),
 		),
 	}
 	if c.Grpc.Network != "" {
@@ -26,6 +34,6 @@ func NewGRPCServer(c *conf.Server, greeter *service.GreeterService, logger log.L
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
-	v1.RegisterGreeterServer(srv, greeter)
+	v1.RegisterUploadServiceServer(srv, upload)
 	return srv
 }

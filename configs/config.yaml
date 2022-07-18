@@ -1,15 +1,13 @@
 server:
-  http:
-    addr: 0.0.0.0:8000
-    timeout: 1s
   grpc:
-    addr: 0.0.0.0:9000
+    addr: 0.0.0.0:9091
     timeout: 1s
+  prometheus:
+    port: 8081
 data:
   database:
     driver: mysql
     source: root:root@tcp(127.0.0.1:3306)/test
-  redis:
-    addr: 127.0.0.1:6379
-    read_timeout: 0.2s
-    write_timeout: 0.2s
+balancer:
+  addr: 127.0.0.1:9000
+  maxRetry: 3

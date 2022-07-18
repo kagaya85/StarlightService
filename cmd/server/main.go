@@ -4,9 +4,13 @@ import (
 	"context"
 	"flag"
 	"os"
+	"strconv"
+	"strings"
 
-	"github.com/go-kratos/kratos-layout/internal/conf"
-	"github.com/go-kratos/kratos-layout/internal/lb"
+	"starlight/balancer/client"
+	"starlight/services/upload/internal/conf"
+	"starlight/services/upload/internal/service"
+
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/config/file"
@@ -19,16 +23,15 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name string
+	Name string = "UploadService"
 	// Version is the version of the compiled software.
 	Version string
 	// flagconf is the config flag.
 	flagconf string
 
-	id, _ = os.Hostname()
+	osname, _ = os.Hostname()
 
-	// global weight list for load balance
-	GlobalWeightList lb.WeightList
+	id = osname + "#" + strconv.Itoa(os.Getpid())
 )
 
 func init() {
@@ -82,8 +85,10 @@ func main() {
 	}
 	defer cleanup()
 
+	service.GlobalBalancer = client.NewBalancerClient(bc.Balancer.Addr, int(bc.Balancer.MaxRetry), Name, strings.Split(bc.Server.Grpc.Addr, ":")[1], logger)
+
 	go func() {
-		if err := GlobalWeightList.Sync(context.TODO(), bc.Balancer); err != nil {
+		if err := service.GlobalBalancer.Sync(context.TODO(), id); err != nil {
 			panic(err)
 		}
 	}()
